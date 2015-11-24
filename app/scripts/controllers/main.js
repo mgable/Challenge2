@@ -10,69 +10,86 @@
 angular.module('supplyhubApp')
 .controller('MainCtrl', ["$scope", "Search", "$location", "$routeParams", "CONFIG", "$q", function ($scope, Search, $location, $routeParams, CONFIG, $q) {
 
-	$scope.results = null;
-	$scope.count = -1;
-	$scope.product = $routeParams.product || null;
+	var product = {};
+	product.name = $routeParams.product || null;
+	product.results = null;
+	product.count = -1;
+
 	$scope.currentPage = $routeParams.currentPage || 1;
 	$scope.maxSize = CONFIG.data.maxSize;
 
 	$scope.searchFor = startSearch;
+	$scope.getResults = getResults;
+	$scope.getCount = getCount;
+	$scope.getProduct = getProduct;
+	$scope.pageChanged = pageChanged;
 
 	init();
 
-	$scope.pageChanged = function(){
-		if ($scope.count === -1){return;}
-		search({'currentPage': $scope.currentPage, 'product':$scope.product, 'count': $scope.count}).then(setLocation);
-	};
+	function pageChanged (){
+		if (product.count === -1){return;}
+		search(product).then(setLocation);
+	}
 
 	function init(){
-		if ($scope.product){
-			searchFor($scope.product);
+		if (product.name){
+			searchFor(product);
 		}
 	}
 
-	function startSearch (product){
+	function getCount(){
+		return product.count;
+	}
+
+	function getResults(){
+		return product.results;
+	}
+
+	function getProduct(){
+		return product.name;
+	}
+
+	function startSearch (name){
 		if (!product) {return;}
 		reset();
-		$scope.product = product;
-		$scope.currentPage = 1;
-		searchFor($scope.product);
+		product.name = name;
+		searchFor(product);
 	}
 
 	function reset(){
 		$scope.currentPage = 1;
-		$scope.count = -1;
-		$scope.results = null;
+		product.count = -1;
+		product.results = null;
 		$location.search({});
 	}
 
-	function search(result){
-		return Search.searchFor(result.product, (result.currentPage - 1) * CONFIG.data.limit).then(
+	function search(product){
+		return Search.searchFor(product.name, ($scope.currentPage - 1) * CONFIG.data.limit).then(
 			function(data){
-				$scope.results = (data.statusCode === 404) ? null : data;
-				result["results"] = $scope.results;
-				return result;
+				product.results = (data.statusCode === 404) ? null : data;
+				product.currentPage = $scope.currentPage;
+				return product;
 			}
 		);
 	}
 
 	function count(product){
-		return Search.getCountFor(product).then(function(data){
- 			$scope.count = data;
- 			return {'count': $scope.count, 'product': product};
+		return Search.getCountFor(product.name).then(function(data){
+ 			product.count = data;
+ 			return product;
  		});
 	}
 
-	function setCurrentPage(result){
+	function setCurrentPage(product){
 		var defer = $q.defer();
 		$scope.currentPage = $routeParams.currentPage || 1;
-		result['currentPage'] = $scope.currentPage;
-		defer.resolve(result);
+		product.currentPage = $scope.currentPage;
+		defer.resolve(product);
 		return defer.promise;
 	}
 
-	function setLocation(result){
-		$location.search({'currentPage': result.currentPage, 'product': result.product});
+	function setLocation(product){
+		$location.search({'currentPage': product.currentPage, 'product': product.name});
 	}
 
 	function searchFor(product){
