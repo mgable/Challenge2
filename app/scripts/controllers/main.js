@@ -15,28 +15,28 @@ angular.module('supplyhubApp')
 	$scope.product = $routeParams.product || null;
 	$scope.currentPage = $routeParams.currentPage || 1;
 	$scope.maxSize = CONFIG.data.maxSize;
-	$scope.totalItems = CONFIG.data.limit;
 
 	$scope.searchFor = startSearch;
 
-	if ($scope.product){
-		searchFor($scope.product);
-	}
-
-	$scope.setPage = function (pageNo){
-		$scope.currentPage = pageNo;
-	};
+	init();
 
 	$scope.pageChanged = function(){
 		if ($scope.count === -1){return;}
-		if (!$scope.product){reset(); return;}
-		search();
-		$location.search({'currentPage': $scope.currentPage, 'product': $scope.product});
+		search({'currentPage': $scope.currentPage, 'product':$scope.product, 'count': $scope.count}).then(setLocation);
 	};
 
+	function init(){
+		if ($scope.product){
+			searchFor($scope.product);
+		}
+	}
+
 	function startSearch (product){
+		if (!product) {return;}
+		reset();
+		$scope.product = product;
 		$scope.currentPage = 1;
-		searchFor(product);
+		searchFor($scope.product);
 	}
 
 	function reset(){
@@ -46,35 +46,37 @@ angular.module('supplyhubApp')
 		$location.search({});
 	}
 
-	function search(){
-		return Search.searchFor($scope.product, ($scope.currentPage - 1) * $scope.totalItems).then(function(data){
-			if (data.statusCode === 404){
-				$scope.results = null;
-			} else {
-				$scope.results = data;
-			}			
-		});
+	function search(result){
+		return Search.searchFor(result.product, (result.currentPage - 1) * CONFIG.data.limit).then(
+			function(data){
+				$scope.results = (data.statusCode === 404) ? null : data;
+				result["results"] = $scope.results;
+				return result;
+			}
+		);
 	}
 
-	function count(){
-		return Search.getCountFor($scope.product).then(function(data){
+	function count(product){
+		return Search.getCountFor(product).then(function(data){
  			$scope.count = data;
+ 			return {'count': $scope.count, 'product': product};
  		});
 	}
 
-	function setCurrentPage(){
+	function setCurrentPage(result){
 		var defer = $q.defer();
 		$scope.currentPage = $routeParams.currentPage || 1;
-		defer.resolve($scope.currentPage);
+		result['currentPage'] = $scope.currentPage;
+		defer.resolve(result);
 		return defer.promise;
 	}
 
+	function setLocation(result){
+		$location.search({'currentPage': result.currentPage, 'product': result.product});
+	}
+
 	function searchFor(product){
-		if (!product) {reset(); return;}
-		$scope.product = product;
-		count().then(setCurrentPage).then(search);
- 		
- 		$location.search({'currentPage': $scope.currentPage, 'product': $scope.product});
+		count(product).then(setCurrentPage).then(search).then(setLocation);
 	}
 }]);
  
