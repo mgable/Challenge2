@@ -14,7 +14,6 @@ angular.module('supplyhubApp')
 
   	function searchFor(product,_skip){
   		if (!product) { return; }
-  		//console.info("searching for " + product);
   		var skip = _skip || 0;
 	  	return _http({"search": product, limit:CONFIG.data.limit, skip:skip}).then(function(data){
 	  		return data;
@@ -22,7 +21,6 @@ angular.module('supplyhubApp')
   	}
 
   	function getCountFor(product){
-  		//console.info("getting count for " + product);
   		return _http({"search": product, "count": "1"}).then(function(data){
   			return data.count;
   		});
@@ -30,7 +28,6 @@ angular.module('supplyhubApp')
 
   	function _http(params){
   		return $http.get(domain, {params:params}).then(function(data){
-  			//console.info(data);
 	  		return data.data;
 	  	});
   	}
