@@ -49,7 +49,7 @@ angular.module('supplyhubApp')
 		return product.name;
 	}
 
-	function startSearch (name){
+	function startSearch(name){
 		if (!product) {return;}
 		reset();
 		product.name = name;
@@ -57,9 +57,9 @@ angular.module('supplyhubApp')
 	}
 
 	function reset(){
-		$scope.currentPage = 1;
 		product.count = -1;
 		product.results = null;
+		$scope.currentPage = 1;
 		$location.search({});
 	}
 
